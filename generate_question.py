@@ -4,7 +4,6 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_ollama import ChatOllama
 from langchain.prompts import ChatPromptTemplate
 
-
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
 os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
 os.environ["LANGCHAIN_PROJECT"] = "test-creator"
@@ -15,7 +14,6 @@ class Question(BaseModel):
     """Question based on the context"""
     question: str = Field(description="Question based on excerpt or chunk from provided context, without relying on external knowledge or assumptions. Use only the information learned from the given context.")
     source: str = Field(description="The initial chunk or excerpt that the question is based on")
-
 
 GENERATE_TEMPLATE = """{context}
 
