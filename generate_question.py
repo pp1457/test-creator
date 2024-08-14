@@ -26,7 +26,7 @@ excerpt in your response."""
 
 GENERATE_PROMPT = ChatPromptTemplate.from_template(GENERATE_TEMPLATE)
 
-def generate_test(context) -> [str]:
+def generate_question(context) -> [str]:
     model = ChatOllama(
         model="llama3-groq-tool-use",
         temperature=3,
@@ -35,6 +35,9 @@ def generate_test(context) -> [str]:
     structured_model = model.with_structured_output(Question)
     main_chain = GENERATE_PROMPT | structured_model
     model_output = main_chain.invoke({'context': context})
+    if not model_output:
+        return []
+
     output = []
     output.append(model_output.question)
     output.append(model_output.source)
@@ -44,6 +47,6 @@ if __name__ == "__main__":
     test_context = """
     If we want the model to return a Pydantic object, we just need to pass in the desired Pydantic class. The key advantage of using Pydantic is that the model-generated output will be validated. Pydantic will raise an error if any required fields are missing or if any fields are of the wrong type.
     """
-    print(generate_test(test_context))
+    print(generate_question(test_context))
 
 
