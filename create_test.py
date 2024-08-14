@@ -12,18 +12,19 @@ def main():
     fields = ["question", "source", "file", "page"]
     rows = []
 
-    pbar = tqdm(total=len(chunks))
+    pbar = tqdm(total=len(chunks) * 5)
 
     for chunk in chunks:
-        question_source_list = generate_question(chunk.page_content)
-        if not question_source_list:
-            continue
+        for _ in range(5):
+            question_source_list = generate_question(chunk.page_content)
+            if not question_source_list:
+                continue
 
-        question_source_list.append(chunk.metadata["source"])
-        question_source_list.append(chunk.metadata["page"])
-        rows.append(question_source_list)
+            question_source_list.append(chunk.metadata["source"])
+            question_source_list.append(chunk.metadata["page"])
+            rows.append(question_source_list)
 
-        pbar.update(1)
+            pbar.update(1)
 
     pbar.close()
 
