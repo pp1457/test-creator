@@ -8,16 +8,20 @@ from write_to_csv import write_to_csv
 def main():
     """main"""
     pdf_filename = "data/" + input("File you want to create test: ")
+
+    number_of_questions = int(input("The number of questions you want to generate on each page: "))
+
     chunks = load_and_split_pdf(pdf_filename)
     fields = ["question", "source", "file", "page"]
     rows = []
 
-    pbar = tqdm(total=len(chunks) * 5)
+    pbar = tqdm(total=len(chunks) * number_of_questions)
 
     for chunk in chunks:
-        for _ in range(5):
+        for i in range(number_of_questions):
             question_source_list = generate_question(chunk.page_content)
             if not question_source_list:
+                print(f"The model failed to generate question {i} on page {chunk.page}")
                 continue
 
             question_source_list.append(chunk.metadata["source"])
