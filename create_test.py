@@ -6,6 +6,7 @@ from generate_question import generate_question
 from write_to_csv import write_to_csv
 
 def validate_pdf_file(filename):
+    """validate pdf file"""
     if not os.path.exists(filename):
         print(f"Error: The file {filename} does not exist.")
         return False
@@ -28,9 +29,10 @@ def main():
         return
 
     number_of_questions = int(input("The number of questions you want to generate on each page: "))
+    result_filename = "result/" + input("File you want to save the result: ")
 
     chunks = load_and_split_pdf(pdf_filename)
-    fields = ["question", "source", "file", "page"]
+    fields = ["question", "key sentences", "keywords", "answer", "file", "page"]
     rows = []
 
     pbar = tqdm(total=len(chunks) * number_of_questions)
@@ -51,7 +53,6 @@ def main():
     pbar.close()
 
     print("Generation Complete")
-    result_filename = "result/" + input("File you want to save the result: ")
 
     write_to_csv(result_filename, fields, rows)
 
