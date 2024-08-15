@@ -11,56 +11,96 @@ os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
 os.environ["LANGCHAIN_PROJECT"] = "test-creator"
 os.environ["LANGCHAIN_API_KEY"] = "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"
 
-# Pydantic
+
 class Question(BaseModel):
     """Question based on the context"""
 
     question: str = Field(
         description=(
-            "A question generated based on key sentences selected from the provided context. "
-            "The model identifies crucial information within the context, isolates the most relevant "
-            "sentences, and crafts a question that can be answered using only the content of these "
-            "key sentences. The generated question should be clear, specific, and directly related to "
-            "the extracted key sentences, ensuring that no external knowledge or assumptions are required."
+            "A concise, short answer question generated based on key sentences directly selected from the provided context. "
+            "This question should be clear and specific, allowing it to be answered exclusively using the information contained within the key sentences. "
+            "The question should not require any external knowledge or assumptions, ensuring that it can be addressed with a brief, precise response."
         )
     )
 
     key_sentences: List[str] = Field(
         description=(
-            "A list of short, precise key sentences extracted from the provided context. Each sentence should be short, concise, "
-            "clear, and directly relevant to the answer of the generated question. The selected sentences "
-            "should collectively contain all the information necessary to infer the correct answer, without "
-            "relying on additional context or external knowledge. These sentences should be carefully chosen "
-            "to ensure they are short and precise, effectively supporting the question-answering task."
+            "A list of key sentences that are directly extracted from the provided context. These sentences should be short, clear, "
+            "and collectively contain all the information necessary to answer the generated question. The selection of these sentences "
+            "is crucial, as they must enable the question to be answered solely based on their content, without relying on any additional "
+            "context or external information. The key sentences should be highly relevant and directly tied to the question and its answer."
+        )
+    )
+
+    
+    keywords: List[str] = Field(
+        description=(
+            "A list of critical keywords or phrases that are directly extracted from the key sentences. These keywords are essential "
+            "for answering the short answer question and should encapsulate the most important concepts or information specifically related to the question. "
+            "Avoid including broad or general terms that represent the main idea or topic of the entire document. "
+            "The selection of these keywords is crucial, as they should represent the core elements required to accurately understand and answer the question, "
+            "focusing solely on the specific details needed for the response."
+        )
+    )
+
+    answer: str = Field(
+        description=(
+            "The correct and concise answer to the short answer question, which should be fully inferable from the key sentences. "
+            "This answer must not rely on any information outside of what is provided in the key sentences, ensuring that the question "
+            "can be answered solely based on the given context."
         )
     )
 
 
 GENERATE_TEMPLATE = """
+
 {context}
 
 -----------
 
-From the context provided above, carefully extract key sentences that encapsulate the most crucial information. These sentences should be as SHORT as possible, concise, clear, and directly relevant to the main ideas presented. Once you have identified these key sentences, formulate a well-considered and precise question that can be answered solely based on the information within these sentences. Ensure the question is specific, focused, and directly tied to the selected text. In your response, include both the question and the key sentences to ensure clarity and context.
+Based on the context provided above, perform the following steps:
+
+1. **Extract Key Sentences**: Identify and extract key sentences directly from the context. These sentences should encapsulate the most crucial information, and they must be as SHORT as possible, concise, and clear. The selected sentences should collectively provide all the information necessary to answer a specific question. Ensure that these sentences are directly relevant to the main ideas presented and that no additional context or external knowledge is required.
+
+2. **Formulate a Precise Question**: Using only the information from the extracted key sentences, craft a well-considered and precise short answer question. The question should be specific, focused, and clearly related to the key sentences. It should be answerable solely based on the information provided within these sentences, without the need for any outside knowledge or assumptions.
+
+3. **Identify Critical Keywords**: Extract keywords from the key sentences that are essential for answering the short answer question. These keywords should represent the core elements of the key sentences and be critical to understanding and formulating the answer.
+
+4. **Provide the Answer**: Based on the key sentences and keywords, provide a concise and accurate answer to the formulated question. Ensure that the answer is fully derived from the key sentences and does not rely on any external information.
+
+In your response, include the following:
+
+- **Question**: The well-considered, precise question that can be answered exclusively using the key sentences.
+- **Key Sentences**: The short, concise sentences extracted directly from the context.
+- **Keywords**: The critical keywords or phrases directly taken from the key sentences, which are necessary for answering the question.
+- **Answer**: The concise and accurate answer to the question, fully derived from the key sentences.
+
+Ensure clarity and consistency in your response, maintaining a strong connection between the context, key sentences, question, keywords, and answer.
 """
 
 GENERATE_PROMPT = ChatPromptTemplate.from_template(GENERATE_TEMPLATE)
 
 def generate_question(context) -> [str]:
     """main"""
+    ollama_endpoint = "http://localhost:23456"
     model = ChatOllama(
-        model="llama3-groq-tool-use",
+        base_url=ollama_endpoint,
+        model="llama3-groq-tool-use:70b",
         temperature=0.9,
-        format="json"
+        format="json",
     )
     structured_model = model.with_structured_output(Question)
     main_chain = GENERATE_PROMPT | structured_model
 
     try:
         model_output = main_chain.invoke({'context': context})
+        if not model_output:
+            return []
         output = []
         output.append(model_output.question)
         output.append('; '.join(sentence for sentence in model_output.key_sentences))
+        output.append('; '.join(keyword for keyword in model_output.keywords))
+        output.append(model_output.answer)
         return output
     except ValidationError as e:
         print(f"Validation error: {e}")
